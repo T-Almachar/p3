@@ -1,0 +1,272 @@
+#include<iostream>
+#include <fstream>
+#include <string>
+#include<algorithm>
+#include<vector>
+#include<cstring>
+
+using namespace std;
+
+struct process{
+        int no;
+        int burst;
+        int wait;
+        int arrivalTime;
+        int turn_around;
+        int priority;
+};
+
+bool cmp(process p1,process p2){
+        if (p1.arrivalTime==p2.arrivalTime){
+                if (p1.priority==p2.priority){
+                        return p1.no<p2.no;
+                }
+                return p1.priority<p2.priority;
+        }
+        return p1.arrivalTime<p2.arrivalTime;
+}
+
+bool cmp1(process p1,process p2){
+        return p1.arrivalTime<p2.arrivalTime;
+}
+bool cmp2(process p1,process p2){
+        return p1.no<p2.no;
+}
+void PS(vector<process>, int);
+void RRS(vector<process>,int);
+void FCFS(vector<process>, int);
+void SJF(vector<process>, int);
+void print_table(vector<process>,int);
+
+int main(int argc, char** argv){
+        ifstream inFile;
+        //      ofstream outFile
+        string fileName;
+//      string outputFile;
+        process hold;
+        vector<process> p;
+        int burstNum, priorityNum, arrivalNum;
+
+//      outputFile = argv[2];
+//      outFile.open (outputFile);
+
+        while(inFile.is_open() == 0){   //FILE INPUT
+                fileName = argv[1];
+                inFile.open(fileName);
+        }
+
+        while(inFile.eof() == 0){
+                inFile >> hold.burst >> hold.priority >> hold.arrivalTime; //Read set of three variables at a time
+                p.push_back(hold);      //Push the queue array
+        }
+
+                        FCFS(p,p.size());
+                        SJF(p,p.size());
+                        RRS(p,p.size());
+                        PS(p,p.size());
+        }
+
+void FCFS(vector<process> p,int n){
+        vector<process> temp;
+        process temp1;
+        cout<<"*********************************************\n";
+        cout<<"\n\t\tFCFS Summary (WT = wait time, TT = turnaround time):\n\t\t";
+        for(int i=0;i<n;i++){
+                temp1.no=p[i].no;
+                temp1.arrivalTime=p[i].arrivalTime;
+                temp1.wait=p[i].wait;
+                temp1.burst=p[i].burst;
+                temp1.turn_around=p[i].turn_around;
+                temp.push_back(temp1);
+        }
+        for(int i=0;i<n;i++){
+                if (i!=0){
+                            temp[i].wait=temp[i-1].turn_around-temp[i].arrivalTime+temp[i-1].arrivalTime;
+                        temp[i].turn_around=temp[i].wait+temp[i].burst;
+                }
+                else{
+                        temp[i].turn_around=temp[i].burst;
+                }
+        }
+        int sum_waiting_time = 0, sum_turnaround_time=0;
+        for(int i=0; i<n; i++) {
+            sum_waiting_time += temp[i].wait;
+            sum_turnaround_time += temp[i].turn_around;
+    }
+    cout<<endl;
+    print_table(temp,n);
+    printf(" Avg  %-2.2lf", (double)sum_waiting_time / (double) n);
+    printf(" %-2.2lf\n", (double)sum_turnaround_time / (double) n);
+}
+
+void SJF(vector<process> p,int n){
+        process temp[n];
+        cout<<"****************************************\n";
+        cout<<"\n\t\tSJF Summary (WT = wait time, TT = turnaround time):\n\t\t";
+        for(int i=0;i<n;i++){
+                temp[i].no=p[i].no;
+                temp[i].arrivalTime=p[i].arrivalTime;
+                temp[i].wait=p[i].wait;
+                temp[i].burst=p[i].burst;
+                temp[i].turn_around=p[i].turn_around;
+        }
+        sort(temp,temp+n,cmp);
+        vector<process> op;
+        for (int i=0;i<n;i++){
+                op.push_back(temp[i]);
+                for (int j=i+1;j<n;j++){
+                        temp[j].arrivalTime-=temp[i].burst;
+                        if (temp[j].arrivalTime<0){
+                                temp[j].arrivalTime=0;
+                        }
+                }
+                sort(temp+i+1,temp+n,cmp);
+        }
+        for(int i=0;i<n;i++){
+                op[i].arrivalTime=p[op[i].no-1].arrivalTime;
+                if (i!=0){
+                        op[i].wait=op[i-1].turn_around-op[i].arrivalTime+op[i-1].arrivalTime;
+                        op[i].turn_around=op[i].wait+op[i].burst;
+                }
+                else{
+                        op[i].turn_around=op[i].burst;
+                }
+        }
+        int sum_waiting_time = 0, sum_turnaround_time=0;
+        for(int i=0; i<n; i++) {
+            sum_waiting_time += op[i].wait;
+            sum_turnaround_time += op[i].turn_around;
+    }
+    cout<<endl;
+    print_table(op,n);
+    printf(" Avg  %-2.2lf", (double)sum_waiting_time / (double) n);
+    printf("  %-2.2lf\n", (double)sum_turnaround_time / (double) n);
+}
+
+
+void PS(vector<process> p,int n){
+        vector<process> temp;
+        process temp1;
+        cout<<"*********************************************\n";
+        cout<<"\n\t\tPriority Summary (WT = wait time, TT = turnaround time):\n\t\t";
+        for(int i=0;i<n;i++){
+                temp1.no=p[i].no;
+                temp1.arrivalTime=p[i].arrivalTime;
+                temp1.wait=p[i].wait;
+                temp1.burst=p[i].burst;
+                temp1.turn_around=p[i].turn_around;
+                temp1.priority=p[i].priority;
+                temp.push_back(temp1);
+        }
+        sort(temp.begin(),temp.end(),cmp);
+        vector<process> op;
+        for(int i=0;i<n;i++){
+                op.push_back(temp[i]);
+        }
+        for(int i=0;i<n;i++){
+                if (i!=0){
+                        op[i].wait=op[i-1].turn_around-op[i].arrivalTime+op[i-1].arrivalTime;
+                        op[i].turn_around=op[i].wait+op[i].burst;
+                }
+                else{
+                        op[i].turn_around=op[i].burst;
+                }
+        }
+        int sum_waiting_time = 0, sum_turnaround_time=0;
+        for(int i=0; i<n; i++) {
+            sum_waiting_time += op[i].wait;
+            sum_turnaround_time += op[i].turn_around;
+    }
+    cout<<endl;
+    print_table(op,n);
+    printf(" Avg  %-2.2lf", (double)sum_waiting_time / (double) n);
+    printf("  %-2.2lf\n", (double)sum_turnaround_time / (double) n);
+}
+
+void RRS(vector<process> p,int n){
+        int tq=2,total=0;
+        process temp[n];
+        cout<<"********************************************";
+        cout<<"\n\t\tRound robin Summary (WT = wait time, TT = turnaround time):\n\t\t\n";
+        for(int i=0;i<n;i++){
+                temp[i].no=p[i].no;
+                temp[i].arrivalTime=p[i].arrivalTime;
+                temp[i].wait=p[i].wait;
+                temp[i].burst=p[i].burst;
+                temp[i].turn_around=p[i].turn_around;
+                total+=(temp[i].burst/tq);
+                if (temp[i].burst%tq!=0){
+                        total++;
+                }
+        }
+        sort(temp,temp+n,cmp1);
+        vector<process> op;
+        vector<process> op1(2*total);
+        for(int i=0;i<n;i++){
+                op1[i]=temp[i];
+        }
+        int k=n;
+        vector<process>::iterator it;
+        for (int i=0;i<total;i++){
+                process x,y;
+                y=op1[i];
+                x=op1[i];
+                if (y.burst<=tq){
+                        x.burst=y.burst;
+                }
+                else{
+                        x.burst=tq;
+                        y.burst-=tq;
+                        op1[k]=y;
+                        k++;
+                }
+                op.push_back(x);
+        }
+
+        for(int i=0;i<total;i++){
+                if (i!=0){
+                        op[i].wait=op[i-1].turn_around-op[i].arrivalTime+op[i-1].arrivalTime;
+                        op[i].turn_around=op[i].wait+op[i].burst;
+                }
+                else{
+                        op[i].turn_around=op[i].burst;
+                }
+        }
+        int turn[n];
+        memset(turn,0,sizeof turn);
+        for(int i=0;i<total;i++){
+                p[op[i].no-1].wait+=(op[i].wait-turn[op[i].no-1]);
+                turn[op[i].no-1]=op[i].turn_around;
+        }
+        vector<process> op2;
+    for(int i=0;i<n;i++){
+        p[i].turn_around+=(p[i].wait+p[i].burst);
+        op2.push_back(p[i]);
+        }
+        int sum_waiting_time = 0, sum_turnaround_time=0;
+        for(int i=0; i<n ;i++) {
+            sum_waiting_time += p[i].wait;
+            sum_turnaround_time += p[i].turn_around;
+    }
+    cout<<endl;
+        print_table(op2,n);
+    printf("Avg   %-2.2lf", (double)sum_waiting_time / (double) n);
+    printf(" %-2.2lf\n", (double)sum_turnaround_time / (double) n);
+}
+
+void print_table(vector<process> p, int n){
+        sort(p.begin(),p.end(),cmp2);
+    int i;
+    cout<<" PID    WT     TT \n";
+
+    for(i=0; i<n; i++) {
+        printf("  %2d     %2d     %2d\n", p[i].no, p[i].wait, p[i].turn_around);
+    }
+    cout<<"\n\n";
+}
+
+
+
+
+
+
